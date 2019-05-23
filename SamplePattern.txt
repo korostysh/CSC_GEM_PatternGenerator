@@ -1,0 +1,4 @@
+prefix:Cam
+bx keystrip pattern nhits
+69	69	4	6
+71	70	4	4
