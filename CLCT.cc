@@ -33,13 +33,14 @@ bool Hits_Generator(int Bx, int Key, int Pat, int Nhits, std::vector<Hit>& hits)
 		if (Nhits < 1 || Nhits > CSCConstants::NUM_LAYERS)
 			return true;				// invalid number of hits
 
-		std::srand(unsigned int(std::time(0)));
+		std::srand(std::time(0));
 
 		int n = 0;
 		while (n != Nhits)
 		{
 			int layer = std::abs(std::rand()) % CSCConstants::NUM_LAYERS;				// randomly select a layer
 			if (usedlayers.at(layer)) continue;
+			else usedlayers.at(layer) = true;			
 
 			int hs = Key + CSCConstants::CLCTPatterns[Pat][layer];      				// selects halfstrip hit from pattern
 
@@ -131,12 +132,25 @@ std::istream& operator>>(std::istream& is, CLCT& cl)
 	}
 
 /// Check
-Group::Group(void) : hexdata(std::vector<unsigned char>(CSCConstants::NUM_LAYERS, unsigned char(0)))
-{}
+Group::Group(void)// : 
+	//hexdata( std::vector<unsigned char>(CSCConstants::NUM_LAYERS, unsigned char(0)) )
+	{
+		for(int i=0; i < CSCConstants::NUM_LAYERS; i++)
+			{
+				hexdata.push_back(char(0));
+			}
+		//hexdata = std::vector<unsigned char> (CSCConstants::NUM_LAYERS, unsigned char(0));
+	}
+
 /// Check
-Group::Group(std::vector<Hit>& hits, int Bx) :
-	hexdata(std::vector<unsigned char>(CSCConstants::NUM_LAYERS, unsigned char(0)))
+Group::Group(std::vector<Hit>& hits, int Bx) //:
+	//hexdata(std::vector<unsigned char>(CSCConstants::NUM_LAYERS, unsigned char(0)))
 {
+	for(int i=0;i < CSCConstants::NUM_LAYERS; i++)
+		{
+			hexdata.push_back(char(0));
+		}
+	
 	for (int i=0; i < hits.size(); i++) 
 	{
 		int delta_t = Bx - hits[i].bx;
@@ -146,29 +160,72 @@ Group::Group(std::vector<Hit>& hits, int Bx) :
 		}
 	}
 }
+
 /// Check
 std::ostream& operator<<(std::ostream& os, const Group& grp)
-{
-	for (int i = 0; i < grp.hexdata.size(); i++)
 	{
-		os << grp.hexdata[ layerorder_all[i][LAYER_SET] - 1 ];	// This replaces Tao's Shuffle Layers Function hope
+		for (int i = 0; i < grp.hexdata.size(); i++)
+			{
+				os << grp.hexdata[ layerorder_all[i][LAYER_SET] - 1 ];	// This replaces Tao's Shuffle Layers Function hope
+			}
+
+		os << char(0) << char(0);
+		return os;
 	}
 
-	os << char(0) << char(0);
-	return os;
-}
 void DumpGroup(Group grp, int Bx)
-{
-	for (int i = 0; i < grp.hexdata.size(); i++)
 	{
-		std::cout << std::bitset<8>(grp.hexdata[layerorder_all[i][LAYER_SET] - 1]) << std::endl;
-	}
-	std::cout << std::bitset<8>(char(0)) << std::endl;
-	std::cout << std::bitset<8>(char(0)) << "   Bx: " << Bx << std::endl << std::endl;
+		for (int i = 0; i < grp.hexdata.size(); i++)
+			{
+				std::cout << std::bitset<8>(grp.hexdata[layerorder_all[i][LAYER_SET] - 1]) << std::endl;
+			}
+		std::cout << std::bitset<8>(char(0)) << std::endl;
+		std::cout << std::bitset<8>(char(0)) << "   Bx: " << Bx << std::endl << std::endl;
 
-	return;
-}
+		return;
+	}
+
+void DumpHit(Hit& hit, int N)
+	{
+		if(N == -1)	std::cout << "Hit : \n";
+		else		std::cout << "Hit : " << N;
+
+		std::cout << '\t' << "bx: " << hit.bx
+			  << '\t' << "hs: " << hit.hs
+			  << '\t' << "layer: " << hit.lay << '\n';
+
+		for(int i=0; i < 3; i++)	std::cout << "  " << std::bitset<8>(GetTriadSeg(hit,i)) << '\n';
+		
+		return;
+	}
+
+
 //~~~~~~~~ Functions ~~~~~~~~~~~~~~~~~~~
+
+void PrintCLCT(CLCT& clct)
+	{
+		std::string empty_layer = "-----------";
+		std::vector<std::string> layers(6,empty_layer);
+		
+		for(int i=0; i < clct.hits.size(); i++){
+			layers.at(clct.hits.at(i).lay).at(5 + (clct.hits.at(i).hs - clct.hs)) = 'X';
+			std::cout << "Hit (" << i << ')' << "   Bx: " << clct.hits.at(i).bx << "   Hs: " << clct.hits.at(i).hs << "   Layer: " << clct.hits.at(i).lay << "   CFEB: " << GetCFEB(clct.hits.at(i).hs) << std::endl;
+		}
+
+		std::cout << "bx keystrip pattern nhits" << std::endl;
+                std::cout << clct << std::endl;
+
+
+		for(int ly=0; ly < 6; ly++)	// for each layer
+		{
+			std::cout << "ly" << ly;
+			if(ly == 2) std::cout << "  key  ";
+			else 	    std::cout << "       ";
+			
+			std::cout << layers.at(ly) << std::endl;	
+			
+		}
+	}
 
 int ReadTxt(std::string& prefix, std::vector<CLCT>& clcts) 
 	{
@@ -264,7 +321,7 @@ bool WritePat(std::vector<CLCT>& clcts, std::string& prefix)
 			std::stringstream ss;
 			ss << prefix << "_ClctPattern_CFEB" << i << "_tmb" << tmbtype << ".pat";
 			//std::cout << ss.str().c_str() << std::endl;
-			oss.push_back( new std::fstream(ss.str().c_str(), std::ios_base::out) );
+			oss.push_back(new std::fstream(ss.str().c_str(), std::ios_base::out) );
 		}
 
 		for (int i = 0; i < CSCConstants::NUM_DCFEBS; i++)
@@ -275,10 +332,18 @@ bool WritePat(std::vector<CLCT>& clcts, std::string& prefix)
 			std::vector<int> times;
 
 			ExtractHits(clcts, hits, i);
+			
+			// DEBUG PURPOSES~~~~~
+			for(int j=0; j < hits.size(); j++){
+				DumpHit(hits.at(j), j);
+			}
+			// ~~~~~~~~~
 
 			if(hits.size() == 0)
 			{
 				fillnbytes(oss, RAMPAGE_SIZE, i);
+				(*(oss.at(i))) << std::flush;		// Fill & Close file
+				delete (oss.at(i));
 			}
 			else
 			{
@@ -297,7 +362,7 @@ bool WritePat(std::vector<CLCT>& clcts, std::string& prefix)
 				int Bx = 0;
 				int q = 0;
 
-				if (times[0] != 0)
+				if (times.at(0) != 0)
 				{
 					Bx = times.at(0);
 					fillnbytes(oss, times.at(0)*8, i);
@@ -306,18 +371,18 @@ bool WritePat(std::vector<CLCT>& clcts, std::string& prefix)
 
 				while (Bx < (times[times.size() -1] + 3) && (RAMPAGE_SIZE - Bx*8) > 0)
 				{
-					if (Bx == (times[q] + 3) && (i + 1) == times.size())
+					if (Bx == (times.at(q) + 3) && (i + 1) == times.size())
 					{
-						fillnbytes(oss, RAMPAGE_SIZE - Bx * 8, i);		/// Double check range here
+						fillnbytes(oss, RAMPAGE_SIZE - (Bx * 8), i);		/// Double check range here
 						break;
 					}
-					else if (Bx == (times[q] + 3))
+					else if (Bx == (times.at(q) + 3))
 					{
 						q++;
-						if(times[q] > Bx)
+						if(times.at(q) > Bx)
 						{
-							fillnbytes(oss, (times[q] - Bx)*8, i);
-							Bx = times[q];
+							fillnbytes(oss, (times.at(q) - Bx)*8, i);
+							Bx = times.at(q);
 							// write Group @ this->Bx
 							(*(oss[i])) << Group(hits,Bx);
 							DumpGroup(Group(hits, Bx), Bx);	// debug
@@ -326,7 +391,7 @@ bool WritePat(std::vector<CLCT>& clcts, std::string& prefix)
 						else
 						{
 							//Write Group @ this->Bx
-							(*(oss[i])) << Group(hits,Bx);
+							(*(oss[i])) << Group(hits, Bx);
 							DumpGroup(Group(hits, Bx), Bx);	// debug
 							Bx++;
 						}
@@ -341,8 +406,11 @@ bool WritePat(std::vector<CLCT>& clcts, std::string& prefix)
 				}
 				if((RAMPAGE_SIZE - Bx*8) > 0)
 				{
-					fillnbytes(oss, RAMPAGE_SIZE - Bx * 8, i);		/// Double check range here
+					fillnbytes(oss, RAMPAGE_SIZE - (Bx * 8), i);		/// Double check range here
 				}
+				
+				*(oss.at(i)) << std::flush;
+				delete (oss.at(i));
 
 			}
 			

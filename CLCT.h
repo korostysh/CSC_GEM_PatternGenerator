@@ -84,6 +84,12 @@ namespace cw {
 	bool WritePat(std::vector<CLCT>&, std::string&);
 
 	void ExtractHits(std::vector<CLCT>& clcts, std::vector<Hit>& hits, int feb = -1);
+
+	// Print object data to console
+	void DumpGroup(Group grp, int Bx);
+	void DumpHit(Hit&);
+
+	void PrintCLCT(CLCT&);
 	
 //	int IsConflict(Hit&, Hit&);		// EVEN => NO CONFLICT
 //	int IsConflict(CLCT&, CLCT&);

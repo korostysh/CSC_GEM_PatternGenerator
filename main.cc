@@ -16,7 +16,7 @@ using namespace cw;
 int main(int argc, char * argv[]) {
 	
 	std::string pref = "SamplePattern";
-	std::string title = "Assbutt";
+	std::string title = "TestRPattern";
 	std::vector<CLCT> pat;
 	std::vector<Hit> raw;
 
@@ -25,6 +25,12 @@ int main(int argc, char * argv[]) {
 
 	std::cout << pat.size() << std::endl;
 	std::cout << raw.size() << std::endl;
+	
+	std::cout << std::endl;
+
+	for(int i=0; i < pat.size(); i++){
+		PrintCLCT(pat.at(i));
+	}
 
 	WriteTxt(title, pat);
 
