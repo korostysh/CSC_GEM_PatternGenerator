@@ -2,6 +2,8 @@
 #include "TaoFunc.h"
 
 namespace cw {
+using namespace emu;
+using namespace pc;
 	int layerorder_all[6][6] = { {3,1,5,6,4,2},//layerorder1
 						  {4,2,5,6,3,1},
 						  {1,3,6,5,2,4},
@@ -166,7 +168,7 @@ std::ostream& operator<<(std::ostream& os, const Group& grp)
 	{
 		for (int i = 0; i < grp.hexdata.size(); i++)
 			{
-				os << grp.hexdata[ layerorder_all[i][LAYER_SET] - 1 ];	// This replaces Tao's Shuffle Layers Function hope
+				os << grp.hexdata[ layerorder_all[LAYER_SET-1][i] - 1 ];	// Layer Shuffle 
 			}
 
 		os << char(0) << char(0);
@@ -177,7 +179,7 @@ void DumpGroup(Group grp, int Bx)
 	{
 		for (int i = 0; i < grp.hexdata.size(); i++)
 			{
-				std::cout << std::bitset<8>(grp.hexdata[layerorder_all[i][LAYER_SET] - 1]) << std::endl;
+				std::cout << std::bitset<8>(grp.hexdata[layerorder_all[LAYER_SET][i] - 1]) << std::endl;
 			}
 		std::cout << std::bitset<8>(char(0)) << std::endl;
 		std::cout << std::bitset<8>(char(0)) << "   Bx: " << Bx << std::endl << std::endl;
@@ -231,6 +233,9 @@ int ReadTxt(std::string& prefix, std::vector<CLCT>& clcts)
 	{
 		CLCT cl;
 		std::string str; 										// String to be used for parsing purposes
+
+		std::cout << "I MADE IT HERE!" << std::endl << std::endl;
+
 		std::fstream ifs((prefix + ".txt"), std::ios_base::in); // Open File to be read;
 
 		// First two lines are header	
@@ -238,7 +243,7 @@ int ReadTxt(std::string& prefix, std::vector<CLCT>& clcts)
 		std::getline(ifs, str);
 		
 
-		///prefix = prefix.substr(7, prefix.length() - 7);
+		prefix = prefix.substr(8, prefix.length() - 8);
 
 		int n = 0;
 		while (ifs >> cl) {
@@ -311,7 +316,7 @@ void fillnbytes_allfebs(std::vector<std::fstream*> oss, unsigned int n) {
 }
 
 /// DOUBLE Check
-bool WritePat(std::vector<CLCT>& clcts, std::string& prefix) 
+bool WritePat(std::string & prefix, std::vector<CLCT>& clcts) 
 	{
 		// Prepare output file streams
 		std::vector<std::fstream*> oss;
@@ -319,7 +324,7 @@ bool WritePat(std::vector<CLCT>& clcts, std::string& prefix)
 		for (int i = 0; i < CSCConstants::NUM_DCFEBS; i++)
 		{
 			std::stringstream ss;
-			ss << prefix << "_ClctPattern_CFEB" << i << "_tmb" << tmbtype << ".pat";
+			ss << prefix << "_cfeb" << i << "_tmb" << tmbtype << ".pat";
 			//std::cout << ss.str().c_str() << std::endl;
 			oss.push_back(new std::fstream(ss.str().c_str(), std::ios_base::out) );
 		}
@@ -328,8 +333,8 @@ bool WritePat(std::vector<CLCT>& clcts, std::string& prefix)
 		{
 			std::cout << "Writing (.pat) file number: " << i << std::endl;	// debug
 
-			std::vector<Hit> hits;
-			std::vector<int> times;
+			std::vector<Hit> hits;		// 
+			std::vector<int> times;		// list of bx's w/
 
 			ExtractHits(clcts, hits, i);
 			
@@ -339,13 +344,13 @@ bool WritePat(std::vector<CLCT>& clcts, std::string& prefix)
 			}
 			// ~~~~~~~~~
 
-			if(hits.size() == 0)
+			if(hits.size() == 0)			// IF : No hits in Pattern
 			{
 				fillnbytes(oss, RAMPAGE_SIZE, i);
 				(*(oss.at(i))) << std::flush;		// Fill & Close file
 				delete (oss.at(i));
 			}
-			else
+			else					// ELSE
 			{
 				// Get times
 				for (int j = 0; j < hits.size(); j++)
@@ -359,8 +364,9 @@ bool WritePat(std::vector<CLCT>& clcts, std::string& prefix)
 				}
 				std::sort(times.begin(), times.end());
 
-				int Bx = 0;
-				int q = 0;
+
+				int Bx = 0;	// Current Bunch Cross
+				int q = 0;	// index var for times vector
 
 				if (times.at(0) != 0)
 				{

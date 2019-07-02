@@ -2,6 +2,7 @@
 #define CSCCONSTANTS_H_
 
 #include <cmath>
+namespace emu { namespace pc {
 
 namespace CSCConstants
 {
@@ -23,5 +24,5 @@ namespace CSCConstants
                                                     };
 
 }
-
+}}
 #endif

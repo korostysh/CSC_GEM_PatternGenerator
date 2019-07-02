@@ -22,6 +22,7 @@
 #define LAYER_SET 1
 
 
+
 namespace cw {
 
 
@@ -78,10 +79,11 @@ namespace cw {
 	int GetLocal(int hs);		//	Out:	Halfstrip relative to CFEB
 
 	// Tao Style (.txt) Pattern files
-	int ReadTxt(std::string&, std::vector<CLCT>&);
+	int ReadTxt(std::string&, std::vector<CLCT>&);		// input : file prefix ONLY
+	int ReadfromTxt(std::string&, std::vector<CLCT>&);	// input : (file prefix) + ".txt"
 	void WriteTxt(std::string&, std::vector<CLCT>&);
 	// Writes Patterns (.pat) to be loaded to EmuBoard
-	bool WritePat(std::vector<CLCT>&, std::string&);
+	bool WritePat(std::string&, std::vector<CLCT>&);
 
 	void ExtractHits(std::vector<CLCT>& clcts, std::vector<Hit>& hits, int feb = -1);
 
