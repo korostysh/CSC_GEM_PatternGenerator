@@ -9,12 +9,13 @@
 #include <ctime>
 #include <algorithm>
 #include <vector>
-
+//#include "TaoFunc.h"
+//#include "CSCConstants.h"
 /// TODO
 //		--.pat output function
 //		--Add Overlapping Hit Checking
 
-#define COMPILE_TYPE 0xc
+#define COMPILE_TYPE 0xa
 #define LAYERS 6
 #define NUM_CFEB 7
 #define STRIPS_CFEB 32			// number halfstrips in cfeb
@@ -93,6 +94,8 @@ namespace cw {
 
 	void PrintCLCT(CLCT&);
 	
+	void TMB_Check(std::vector<CLCT>&, std::string&);
+
 //	int IsConflict(Hit&, Hit&);		// EVEN => NO CONFLICT
 //	int IsConflict(CLCT&, CLCT&);
 

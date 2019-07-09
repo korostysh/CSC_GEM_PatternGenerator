@@ -1,9 +1,12 @@
 #include "CLCT.h"
 #include "TaoFunc.h"
+#include "CSCConstants.h"
+
 
 namespace cw {
 using namespace emu;
 using namespace pc;
+
 	int layerorder_all[6][6] = { {3,1,5,6,4,2},//layerorder1
 						  {4,2,5,6,3,1},
 						  {1,3,6,5,2,4},
@@ -66,8 +69,11 @@ int  GetLocal(int hs)
 
 /// Check
 unsigned char GetTriadSeg(Hit hit, int i)
-	{	
-		int localhs = GetLocal(hit.hs);
+	{		
+		// Layer Staggering implemented here!
+		bool stagger = (COMPILE_TYPE == 0xb) || (COMPILE_TYPE == 0xa);
+		int halfStrip = ((hit.lay % 2 != 0) && stagger) ? (hit.hs + 1) : (hit.hs);	// odd layers inc by +1 if staggered
+		int localhs = GetLocal(halfStrip);
 		unsigned char n = 1 << (localhs / 4);
 		bool leftstrip = (localhs % 4 < 2);
 		bool lefths = (localhs % 2 == 0);
@@ -234,9 +240,12 @@ int ReadTxt(std::string& prefix, std::vector<CLCT>& clcts)
 		CLCT cl;
 		std::string str; 										// String to be used for parsing purposes
 
-		std::cout << "I MADE IT HERE!" << std::endl << std::endl;
+		std::cout << "I MADE IT HERE!" << std::endl;
+		std::cout << "I am trying to open file at: " << prefix << ".txt" << std::endl << std::endl;
+		
 
-		std::fstream ifs((prefix + ".txt"), std::ios_base::in); // Open File to be read;
+
+		std::fstream ifs((prefix + ".txt").c_str(), std::ios_base::in); // Open File to be read;
 
 		// First two lines are header	
 		std::getline(ifs, prefix);
@@ -257,7 +266,7 @@ int ReadTxt(std::string& prefix, std::vector<CLCT>& clcts)
 
 void WriteTxt(std::string& str, std::vector<CLCT>& clcts) 
 	{
-		std::fstream text_file((str + ".txt"), std::ios_base::out); // Create output file => (input string).txt
+		std::fstream text_file((str + ".txt").c_str(), std::ios_base::out); // Create output file => (input string).txt
 		//std::sort(clcts.begin(), clcts.end(), CompareCLCT);	// Sort the CLCT vector in case it's asorted
 
 		// Add header stuff to pattern(.txt) file
@@ -285,7 +294,7 @@ void ExtractHits(std::vector<CLCT>& clcts, std::vector<Hit>& hits, int feb)
 				hits.insert(hits.end(), clcts.at(i).hits.begin(), clcts.at(i).hits.end());
 			}
 		}
-		/// DOUBLE CHECK THE REST OF THIS FUNCTION	**BAD PRACTICE**
+		/// If you want to pull hits from a specific dcfeb
 		else if(feb >= 0 && feb < CSCConstants::NUM_DCFEBS)
 		{
 			for(int i=0; i < clcts.size(); i++)
@@ -327,6 +336,7 @@ bool WritePat(std::string & prefix, std::vector<CLCT>& clcts)
 			ss << prefix << "_cfeb" << i << "_tmb" << tmbtype << ".pat";
 			//std::cout << ss.str().c_str() << std::endl;
 			oss.push_back(new std::fstream(ss.str().c_str(), std::ios_base::out) );
+			//std::cout << "opening file " << ss.str() << std::endl;
 		}
 
 		for (int i = 0; i < CSCConstants::NUM_DCFEBS; i++)
@@ -424,6 +434,9 @@ bool WritePat(std::string & prefix, std::vector<CLCT>& clcts)
 		}
 		return true;
 	}
+
+
+void TMB_Check(std::vector<CLCT>& clcts, std::string& tmbInfo){return;}
 
 
 }

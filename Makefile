@@ -7,7 +7,7 @@ OPT = -O3 -g -std=c++0x
 LDFLAGS = -lm
 
 # set pattern conversion name
-Gen_EXE = test
+Gen_EXE = pat_gen
 Gen_SRC = main.cc
 Gen_OBJ = Test.o
 
