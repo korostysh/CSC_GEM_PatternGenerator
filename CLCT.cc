@@ -18,7 +18,7 @@ using namespace pc;
 //~~~~~~~~~ Support Functions ~~~~~~~~~~~~
 bool EdgeCheck(int key, int hs)						// used to check if generated hit is within CSC bounds
 	{
-		if (hs < 0 || hs > CSCConstants::NUM_HS) // falls outside hs range
+		if (hs < 0 || hs > CSCConstants::NUM_HS) // falls outside hs range. hs >= 1
 			return false;
 		else if (key <= 127 && hs > 127)	// crosses Edge of ME1/1b
 			return false;
@@ -73,6 +73,8 @@ unsigned char GetTriadSeg(Hit hit, int i)
 		// Layer Staggering implemented here!
 		bool stagger = (COMPILE_TYPE == 0xb) || (COMPILE_TYPE == 0xa);
 		int halfStrip = ((hit.lay % 2 != 0) && stagger) ? (hit.hs + 1) : (hit.hs);	// odd layers inc by +1 if staggered
+                if (halfStrip < 0) std::cerr<<"wrong halfstrip generated from hit: "<< halfStrip <<" hit "<< hit <<" compile type "<< COMPILE_TYPE << std::endl;
+                //if (stagger) std::cout <<"Hit "<< hit <<" add stagger "<< halfStrip << std::endl;
 		int localhs = GetLocal(halfStrip);
 		unsigned char n = 1 << (localhs / 4);
 		bool leftstrip = (localhs % 4 < 2);
@@ -100,6 +102,11 @@ unsigned char GetTriadSeg(Hit hit, int i)
 Hit::Hit() : bx(0), hs(0), lay(0) {}
 
 Hit::Hit(int Bx, int Hs, int Layer) : bx(Bx), hs(Hs), lay(Layer) {}
+
+std::ostream& operator << (std::ostream& os, const Hit& hit){
+    os << "Hit hs " << hit.hs<<" bx "<< hit.bx <<" layer "<< hit.lay ;
+    return os;
+}
 
 
 CLCT::CLCT(void) : bx(0), hs(0), pat(0), nhits(0) {}
@@ -174,6 +181,10 @@ std::ostream& operator<<(std::ostream& os, const Group& grp)
 	{
 		for (int i = 0; i < grp.hexdata.size(); i++)
 			{
+                                
+                            if (COMPILE_TYPE == 0xb)//reverse all layers for type B
+				os << grp.hexdata[ 6 - layerorder_all[LAYER_SET-1][i] ];	// Layer Shuffle 
+                            else
 				os << grp.hexdata[ layerorder_all[LAYER_SET-1][i] - 1 ];	// Layer Shuffle 
 			}
 
@@ -183,9 +194,14 @@ std::ostream& operator<<(std::ostream& os, const Group& grp)
 
 void DumpGroup(Group grp, int Bx)
 	{
+                if (COMPILE_TYPE == 0xb)
+                     std::cout <<"Type B firmware, Also reverse all layers " << std::endl;
 		for (int i = 0; i < grp.hexdata.size(); i++)
 			{
-				std::cout << std::bitset<8>(grp.hexdata[layerorder_all[LAYER_SET][i] - 1]) << std::endl;
+                            if (COMPILE_TYPE == 0xb)//reverse all layers for type B
+				std::cout << std::bitset<8>(grp.hexdata[6 - layerorder_all[LAYER_SET-1][i]]) << std::endl;
+                            else
+				std::cout << std::bitset<8>(grp.hexdata[layerorder_all[LAYER_SET-1][i] - 1]) << std::endl;
 			}
 		std::cout << std::bitset<8>(char(0)) << std::endl;
 		std::cout << std::bitset<8>(char(0)) << "   Bx: " << Bx << std::endl << std::endl;

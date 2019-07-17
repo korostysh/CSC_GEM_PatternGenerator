@@ -15,7 +15,7 @@
 //		--.pat output function
 //		--Add Overlapping Hit Checking
 
-#define COMPILE_TYPE 0xa
+#define COMPILE_TYPE 0xb
 #define LAYERS 6
 #define NUM_CFEB 7
 #define STRIPS_CFEB 32			// number halfstrips in cfeb
@@ -39,6 +39,7 @@ namespace cw {
 		// Constructors
 		Hit(void);
 		Hit(int Bx, int Hs, int Layer);
+                friend std::ostream& operator << (std::ostream& os, const Hit& hit);
 	};
 
 	class CLCT
