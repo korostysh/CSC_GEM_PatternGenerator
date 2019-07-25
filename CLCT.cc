@@ -20,9 +20,11 @@ bool EdgeCheck(int key, int hs)						// used to check if generated hit is within
 	{
 		if (hs < 0 || hs > CSCConstants::NUM_HS) // falls outside hs range. hs >= 1
 			return false;
-		else if (key <= 127 && hs > 127)	// crosses Edge of ME1/1b
+		else if ((key <= 127 && hs > 127) && (COMPILE_TYPE == 0xc || COMPILE_TYPE == 0xd))	// crosses Edge of ME1/1b
 			return false;
-		else if (key >= 128 && hs < 128)	// crosses Edge of ME1/1a
+		else if ((key >= 128 && hs < 128) && (COMPILE_TYPE == 0xc || COMPILE_TYPE == 0xd))	// crosses Edge of ME1/1a
+			return false;
+		else if (  (hs < 0 || hs > 159)   && (COMPILE_TYPE == 0xa || COMPILE_TYPE == 0xb))	// out of range for type A & B
 			return false;
 		else
 			return true;
