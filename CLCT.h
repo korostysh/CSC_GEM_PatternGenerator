@@ -1,5 +1,6 @@
 #include <cstdlib>
 #include <fstream>
+#include <string.h>
 #include <sstream>
 #include <iostream>
 #include <stdlib.h>
@@ -15,7 +16,7 @@
 //		--.pat output function
 //		--Add Overlapping Hit Checking
 
-#define COMPILE_TYPE 0xb
+#define COMPILE_TYPE 0xc
 #define LAYERS 6
 #define NUM_CFEB 7
 #define STRIPS_CFEB 32			// number halfstrips in cfeb
@@ -75,14 +76,34 @@ namespace cw {
 		friend std::ostream& operator << (std::ostream&, const Group&);
 	};
 
+	class Cluster
+	{
+	public:
+		// Data Members	  Range
+		int bx;		// 0-500
+		int roll;	// 1-8
+		int pad;	// 0-383
+		int size;	// 1-8
+		int layer;	// 1-2
+		
+		Cluster(void);
+		Cluster(int, int, int, int, int);
+		Cluster(const Cluster&);
 
+		friend std::ostream& operator<<(std::ostream&, const Cluster&);
+		friend std::istream& operator>>(std::istream&, Cluster&);
+	};
+	
+
+
+	
 	//	Functions
 	int GetCFEB(int hs);		//	Out:	Cfeb given half strip
 	int GetLocal(int hs);		//	Out:	Halfstrip relative to CFEB
 
 	// Tao Style (.txt) Pattern files
-	int ReadTxt(std::string&, std::vector<CLCT>&);		// input : file prefix ONLY
-	int ReadfromTxt(std::string&, std::vector<CLCT>&);	// input : (file prefix) + ".txt"
+	int ReadTxt(std::string&, std::vector<CLCT>&);					// input : file prefix ONLY
+	std::string ReadTxt(std::string&, std::vector<CLCT>&, std::vector<Cluster>&);	// input : (file prefix) + ".txt"	GEM Capable!!
 	void WriteTxt(std::string&, std::vector<CLCT>&);
 	// Writes Patterns (.pat) to be loaded to EmuBoard
 	bool WritePat(std::string&, std::vector<CLCT>&);

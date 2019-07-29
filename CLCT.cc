@@ -69,7 +69,7 @@ int  GetLocal(int hs)
 		return GetInputXStrip<STRIPS_CFEB>(hs, COMPILE_TYPE); 
 	}
 
-/// Check
+
 unsigned char GetTriadSeg(Hit hit, int i)
 	{		
 		// Layer Staggering implemented here!
@@ -148,7 +148,46 @@ std::istream& operator>>(std::istream& is, CLCT& cl)
 		return is;
 	}
 
-/// Check
+
+Cluster::Cluster(void) :
+	bx(0), roll(0), pad(0), size(0), layer(0)
+	{}
+
+Cluster::Cluster(int Bx, int Roll, int Pad, int Size, int Layer) :
+	bx(Bx),
+	roll(Roll),
+	pad(Pad),
+	size(Size),
+	layer(Layer)
+	{}
+
+Cluster::Cluster(const Cluster& clust) :
+	bx(clust.bx),
+	roll(clust.roll),
+	pad(clust.pad),
+	size(clust.size),
+	layer(clust.layer)
+	{}
+
+std::istream& operator>>(std::istream& is, Cluster& cluster)
+	{
+		int Bx, Roll, Pad, Size, Layer;
+		is >> Bx >> Roll >> Pad >> Size >> Layer;
+		
+		cluster = Cluster(Bx, Roll, Pad, Size, Layer);
+		return is;
+	}
+
+std::ostream& operator<<(std::ostream& os, const Cluster& cl)
+	{
+		os << cl.bx << '\t' << cl.roll << '\t' 
+			<< cl.pad << '\t' << cl.size 
+			<< '\t' << cl.layer;	
+
+		return os;
+	}
+
+
 Group::Group(void)// : 
 	//hexdata( std::vector<unsigned char>(CSCConstants::NUM_LAYERS, unsigned char(0)) )
 	{
@@ -159,7 +198,7 @@ Group::Group(void)// :
 		//hexdata = std::vector<unsigned char> (CSCConstants::NUM_LAYERS, unsigned char(0));
 	}
 
-/// Check
+
 Group::Group(std::vector<Hit>& hits, int Bx) //:
 	//hexdata(std::vector<unsigned char>(CSCConstants::NUM_LAYERS, unsigned char(0)))
 {
@@ -178,7 +217,7 @@ Group::Group(std::vector<Hit>& hits, int Bx) //:
 	}
 }
 
-/// Check
+
 std::ostream& operator<<(std::ostream& os, const Group& grp)
 	{
 		for (int i = 0; i < grp.hexdata.size(); i++)
@@ -280,6 +319,58 @@ int ReadTxt(std::string& prefix, std::vector<CLCT>& clcts)
 		}
 
 		return n;
+	}
+
+std::string ReadTxt(std::string& path, std::vector<CLCT>& clcts, std::vector<Cluster>& clusters)
+	{
+		CLCT clct;
+		Cluster gem;
+		char mode = 'c';	// c-CLCT	g-GEM		
+		std::string str, prefix;
+
+		std::cout << "Trying to open file: " << path << std::endl << std::endl;
+
+		std::fstream ifs(path.c_str(), std::ios_base::in); // Open the file
+		
+		std::getline(ifs, prefix);	// first line specify pattern prefix
+		prefix = prefix.substr(8, prefix.length()-8);
+
+		do{
+			std::getline(ifs, str);
+			
+			if(str[0] == 'C'){
+				mode = 'c';
+				std::cout << "Switching to CLCT Mode" << std::endl;
+				std::getline(ifs, str);	// next line is header
+				std::cout << str << std::endl;
+			}
+			else if(str[0] == 'G'){
+				mode = 'g';
+				std::cout << "Switching to GEM Mode" << std::endl;
+				std::getline(ifs, str);	// next line is header
+				std::cout << str << std::endl;
+			}
+			else if(!ifs.eof() && (str.length() != 0)){
+				std::stringstream ss(str.c_str());
+				switch(mode){
+					case 'c':
+						ss >> clct;
+						clcts.push_back(clct);
+						std::cout << clct << std::endl;
+						break;
+					case 'g':
+						ss >> gem;
+						clusters.push_back(gem);
+						std::cout << gem << std::endl;
+						break;
+					default:
+						break;
+				}
+			}	
+		}while(!ifs.eof());
+		
+		ifs.close();
+		return prefix;
 	}
 
 void WriteTxt(std::string& str, std::vector<CLCT>& clcts) 
