@@ -187,6 +187,13 @@ std::ostream& operator<<(std::ostream& os, const Cluster& cl)
 		return os;
 	}
 
+unsigned int Cluster::info(void)
+	{
+		unsigned int info = 0;
+		info = ((size << 11) | (roll << 8) | (pad));	// Do range check before calling!
+		return info;
+	}
+
 
 Group::Group(void)// : 
 	//hexdata( std::vector<unsigned char>(CSCConstants::NUM_LAYERS, unsigned char(0)) )
@@ -393,7 +400,7 @@ void WriteTxt(std::string& str, std::vector<CLCT>& clcts)
 		text_file.close();
 		return;
 	}
-/// Check
+
 void ExtractHits(std::vector<CLCT>& clcts, std::vector<Hit>& hits, int feb)
 	{
 		if (feb == -1)
@@ -417,23 +424,58 @@ void ExtractHits(std::vector<CLCT>& clcts, std::vector<Hit>& hits, int feb)
 		return;
 	}
 
+bool compareCluster(Cluster c1, Cluster c2)
+	{
+		return(c1.bx < c2.bx);
+	}
 
-void fillnbytes(std::vector<std::fstream*> oss, unsigned int n, unsigned int thisfeb) {
+void CollectClusters(std::vector<Cluster>& pads, std::vector<Cluster>& in_pads, int layer, int gem_fiber = -1)
+	{	// Fills pads with Clusters of
+		if(gem_fiber == -1)
+		{
+			for(int i=0; i < in_pads.size(); i++){
+				if(in_pads[i].layer == layer) pads.push_back(in_pads[i]);
+			}
+		}
+		else	// Extend if necessary
+		{}
 
+		std::sort(pads.begin(), pads.end(), compareCluster);	// sort by Bx
+		return;
+	}
+
+void fillnbytes(std::vector<std::fstream*> oss, unsigned int n, unsigned int thisfeb) 
+	{
 	for (unsigned int j = 0; j < n; j++)
 		(*(oss[thisfeb])) << char(0);
 
-}
+	}
 
-void fillnbytes_allfebs(std::vector<std::fstream*> oss, unsigned int n) {
-
+void fillnbytes_allfebs(std::vector<std::fstream*> oss, unsigned int n) 
+	{
 	for (unsigned int i = 0; i < oss.size(); i++)
 		for (unsigned int j = 0; j < n; j++)
 			(*(oss[i])) << char(0);
 
-}
+	}
 
-/// DOUBLE Check
+void writenbytes(std::fstream* out, unsigned int n, unsigned int x = 255)
+	{
+		for(unsigned int i=1; i <= n; i++){
+			(*out) << char(x);
+		}
+	}
+
+void writenbxs(std::fstream* out, unsigned int n)
+	{
+		for(unsigned int i=1; i <=n; i++){
+			writenbytes(out, 7);	// default 255
+			writenbytes(out, 1, 255);
+		}
+	}
+
+
+/// CSC
 bool WritePat(std::string & prefix, std::vector<CLCT>& clcts) 
 	{
 		// Prepare output file streams
@@ -541,6 +583,48 @@ bool WritePat(std::string & prefix, std::vector<CLCT>& clcts)
 			
 			
 		}
+		return true;
+	}
+// GEM
+bool WritePat(std::string& prefix, std::vector<Cluster>& in_pads)
+	{
+		// Open (.pat) files
+		char tmbtype = COMPILE_TYPE - 0xa + 'a';
+		std::vector<std::fstream*> oss;
+		for(int gem_fiber = 0; gem_fiber < GEM_FIBERS; gem_fiber++){
+			std::stringstream ss;
+			ss << prefix << "_GEM" << gem_fiber << "_tmb" << tmbtype << ".pat";
+			oss.push_back(new std::fstream(ss.str().c_str(), std::ios_base::out) );			
+		}
+		
+		// Write GEMpads
+		for(int layer = 1; layer <=2; layer++){
+			std::vector<Cluster> pads;
+			CollectClusters(pads, in_pads, layer);
+			
+			int totbytes;
+			unsigned int remainbits = 0;
+			unsigned int remaininfo = 0;
+			unsigned int icluster = 0;
+			unsigned int x;
+
+			unsigned int lastbx;
+
+			for(unsigned int i=0; i < pads.size(); i++){
+				std::cout << "i " << i << " bx " << pads[i].bx << " cluster bits: " << (std::bitset<14>)pad[i].info() << std::endl;
+				
+				if(lastbx < pads[i].bx){
+					if(icluster>0 && icluster<4){
+						x = std::pow(2,8-remainbits) -1;
+						
+						
+					}
+				} 
+			} 
+		}
+		
+		
+		
 		return true;
 	}
 

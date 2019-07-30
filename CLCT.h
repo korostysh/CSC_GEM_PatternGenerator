@@ -22,7 +22,8 @@
 #define STRIPS_CFEB 32			// number halfstrips in cfeb
 #define RAMPAGE_SIZE 4*1024
 #define LAYER_SET 1
-
+#define CLUSTER_BITS 14
+#define GEM_FIBERS 4
 
 
 namespace cw {
@@ -76,6 +77,13 @@ namespace cw {
 		friend std::ostream& operator << (std::ostream&, const Group&);
 	};
 
+	struct Cluster_bin	// 14-bit object
+	{
+		unsigned roll : 3;
+		unsigned pad  : 8;
+		unsigned size : 3;
+	};
+
 	class Cluster
 	{
 	public:
@@ -92,23 +100,29 @@ namespace cw {
 
 		friend std::ostream& operator<<(std::ostream&, const Cluster&);
 		friend std::istream& operator>>(std::istream&, Cluster&);
+
+		Cluster_bin bin(void);		// remove me
+		unsigned int info(void);
 	};
+	 
 	
-
-
-	
-	//	Functions
+	// Positioning Functions
 	int GetCFEB(int hs);		//	Out:	Cfeb given half strip
 	int GetLocal(int hs);		//	Out:	Halfstrip relative to CFEB
 
-	// Tao Style (.txt) Pattern files
+	// Text File Parsers / Writers (human readable)
 	int ReadTxt(std::string&, std::vector<CLCT>&);					// input : file prefix ONLY
 	std::string ReadTxt(std::string&, std::vector<CLCT>&, std::vector<Cluster>&);	// input : (file prefix) + ".txt"	GEM Capable!!
+
 	void WriteTxt(std::string&, std::vector<CLCT>&);
+
 	// Writes Patterns (.pat) to be loaded to EmuBoard
-	bool WritePat(std::string&, std::vector<CLCT>&);
+	bool WritePat(std::string&, std::vector<CLCT>&);	// CSC
+	bool WritePat(std::string&, std::vector<Cluster>&);	// GEM
+
 
 	void ExtractHits(std::vector<CLCT>& clcts, std::vector<Hit>& hits, int feb = -1);
+	void CollectClusters(std::vector<Cluster>& pads, std::vector<Cluster>* in_pads, int layer, int gem_fiber = -1);
 
 	// Print object data to console
 	void DumpGroup(Group grp, int Bx);
