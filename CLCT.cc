@@ -598,11 +598,11 @@ bool WritePat(std::string& prefix, std::vector<Cluster>& in_pads)
 		}
 		
 		// Write GEMpads
-		for(int layer = 0; layer <=2; layer+=2){
+		for (int layer = 0; layer <= 2; layer += 2) {
 			std::vector<Cluster> pads;
-			if(layer == 0) CollectClusters(pads, in_pads, (1));
+			if (layer == 0) CollectClusters(pads, in_pads, (1));
 			else CollectClusters(pads, in_pads, (layer));
-			
+
 			int totbytes;
 			unsigned int remainbits = 0;
 			unsigned int remaininfo = 0;
@@ -611,93 +611,126 @@ bool WritePat(std::string& prefix, std::vector<Cluster>& in_pads)
 
 			unsigned int lastbx;
 
-			for(unsigned int i=0; i < pads.size(); i++){
+			for (unsigned int i = 0; i < pads.size(); i++) {
 				std::cout << "i " << i << " bx " << pads[i].bx << " cluster bits: " << (std::bitset<14>)pads[i].info() << std::endl;
-				
-				if(lastbx < pads[i].bx){
-					if((icluster >= 0) && (icluster < 4)){
+
+				if (lastbx < pads[i].bx) {
+					if ((icluster >= 0) && (icluster < 4)) {
 						// Finish writing to File 1
-						x = std::pow(2,8-remainbits) -1;
-						(*(oss[layer])) << (remaininfo << (8-remainbits) | x);
-						writenbytes(oss[layer], 7-icluster*14/8);
+						x = std::pow(2, 8 - remainbits) - 1;
+						(*(oss[layer])) << (remaininfo << (8 - remainbits) | x);
+						writenbytes(oss[layer], 7 - icluster * 14 / 8);
 						writenbytes(oss[layer], 1);
-						writenbxs(oss[layer], pads[i].bx-1-lastbx);
+						writenbxs(oss[layer], pads[i].bx - 1 - lastbx);
 						// Fill File 2
-						writenbxs(oss[layer+1], pads[i].bx-lastbx);	// one more byte since nothing was written for last bx
-						
+						writenbxs(oss[layer + 1], pads[i].bx - lastbx);	// one more byte since nothing was written for last bx
+
 					}
-					else if(icluster >= 4 && icluster < 8){
-						
-						
-					} 
-					
+					else if (icluster >= 4 && icluster < 8) {
+						// Finish writing to File 2
+						x = std::pow(2, 8 - remainbits) - 1;
+						(*(oss[layer + 1])) << (remaininfo << (8 - remainbits) | x);
+						icluster = icluster % 4;
+						writenbytes(oss[layer + 1], 7 - icluster * 14 / 8);
+						writenbytes(oss[layer + 1], 1);
+						writenbxs(oss[layer + 1], pads[i].bx - 1 - lastbx);
+
+					}
+
 					icluster = 0;
 					remainbits = 0;
 					remaininfo = 0;
-				} 
-				if(lastbx == pads[i].bx){
-					if(icluster >= 8) 
+				}
+				if (lastbx == pads[i].bx) {
+					if (icluster >= 8)
 						continue;
-					
-					switch(icluster){
-					// File 1
-						case 0: remainbits = 6;
-							x = std::pow(2,remainbits) - 1;
-							remaininfo = (pads[i].info() & x);
-							(*(oss[layer])) << char(pads[i].info() >> 6);
-							break;
-						case 1: remainbits = 4;
-							(*(oss[layer])) << char((remaininfo << 2) | (pads[i].info() >> 12));
-							(*(oss[layer])) << char(pads[i].info() >> 4);
-							x = std::pow(2, remainbits) - 1;
-							remaininfo = (pads[i].info() & x);
-							break;
-						case 2: remainbits = 2;
-							(*(oss[layer])) << char((remaininfo << 4) | (pads[i].info() >> 10));
-							(*(oss[layer])) << char(pads[i].info() >> 2);
-							x = std::pow(2, remainbits) - 1;
-							remaininfo = (pads[i].info() & x);
-							break;
-						case 3: remainbits = 0;
-							(*(oss[layer])) << char((remaininfo << 6) | (pads[i].info() >> 8));
-							(*(oss[layer])) << char(pads[i].info());
-							remaininfo = 0;
-							break;
-					// FILE 2
-						case 4: remainbits = 6;
-							// Finish File 1
-							writenbytes((oss[layer]), 1);
-							x = std::pow(2,remainbits) - 1;
-							remaininfo = (pads[i].info() & x);
-							(*(oss[layer + 1])) << char(pads[i].info() >> 6);
-							break;
-						case 5: remainbits = 4;
-							(*(oss[layer + 1])) << char((remaininfo << 2) | (pads[i].info() >> 12));
-							(*(oss[layer + 1])) << char(pads[i].info() >> 4);
-							x = std::pow(2, remainbits) - 1;
-							remaininfo = (pads[i].info() & x);
-							break;
-						case 6: remainbits = 2;
-							(*(oss[layer + 1])) << char((remaininfo << 4) | (pads[i].info() >> 12));
-                                                        (*(oss[layer + 1])) << char(pads[i].info() >> 2);
-							x = std::pow(2, remainbits) - 1;
-							remaininfo = (pads[i].info() & x);
-							break;
-						case 7: remainbits = 0;
-							(*(oss[layer + 1])) << char((remaininfo << 6) | (pads[i].info() >> 8));
-							(*(oss[layer + 1])) << char(pads[i].info());
-							remaininfo = 0;
-							break;
-						defalut: 
-							std::cout << " error icluster: " << icluster << std::endl;
-							break;
+
+					switch (icluster) {
+						// File 1
+					case 0: remainbits = 6;
+						x = std::pow(2, remainbits) - 1;
+						remaininfo = (pads[i].info() & x);
+						(*(oss[layer])) << char(pads[i].info() >> 6);
+						break;
+					case 1: remainbits = 4;
+						(*(oss[layer])) << char((remaininfo << 2) | (pads[i].info() >> 12));
+						(*(oss[layer])) << char(pads[i].info() >> 4);
+						x = std::pow(2, remainbits) - 1;
+						remaininfo = (pads[i].info() & x);
+						break;
+					case 2: remainbits = 2;
+						(*(oss[layer])) << char((remaininfo << 4) | (pads[i].info() >> 10));
+						(*(oss[layer])) << char(pads[i].info() >> 2);
+						x = std::pow(2, remainbits) - 1;
+						remaininfo = (pads[i].info() & x);
+						break;
+					case 3: remainbits = 0;
+						(*(oss[layer])) << char((remaininfo << 6) | (pads[i].info() >> 8));
+						(*(oss[layer])) << char(pads[i].info());
+						remaininfo = 0;
+						break;
+						// FILE 2
+					case 4: remainbits = 6;
+						// Finish File 1
+						writenbytes((oss[layer]), 1);
+						x = std::pow(2, remainbits) - 1;
+						remaininfo = (pads[i].info() & x);
+						(*(oss[layer + 1])) << char(pads[i].info() >> 6);
+						break;
+					case 5: remainbits = 4;
+						(*(oss[layer + 1])) << char((remaininfo << 2) | (pads[i].info() >> 12));
+						(*(oss[layer + 1])) << char(pads[i].info() >> 4);
+						x = std::pow(2, remainbits) - 1;
+						remaininfo = (pads[i].info() & x);
+						break;
+					case 6: remainbits = 2;
+						(*(oss[layer + 1])) << char((remaininfo << 4) | (pads[i].info() >> 12));
+						(*(oss[layer + 1])) << char(pads[i].info() >> 2);
+						x = std::pow(2, remainbits) - 1;
+						remaininfo = (pads[i].info() & x);
+						break;
+					case 7: remainbits = 0;
+						(*(oss[layer + 1])) << char((remaininfo << 6) | (pads[i].info() >> 8));
+						(*(oss[layer + 1])) << char(pads[i].info());
+						remaininfo = 0;
+						break;
+					defalut:
+						std::cout << " error icluster: " << icluster << std::endl;
+						break;
 					}
 				}
 				icluster++;
+			}// End pads vector loop
+
+			if ((icluster >= 0) && (icluster < 4)) {
+				// Finish writing to File 1
+				x = std::pow(2, 8 - remainbits) - 1;
+				(*(oss[layer])) << (remaininfo << (8 - remainbits) | x);
+				writenbytes(oss[layer], 7 - icluster * 14 / 8);
+				writenbytes(oss[layer], 1);
+				writenbxs(oss[layer], pads[i].bx - 1 - lastbx);
+				// Fill File 2
+				writenbxs(oss[layer + 1], pads[i].bx - lastbx);	// one more byte since nothing was written for last bx
 			}
-		}
-		
-		
+			else if (icluster >= 4 && icluster < 8) {
+				// Finish writing to File 2
+				x = std::pow(2, 8 - remainbits) - 1;
+				(*(oss[layer + 1])) << (remaininfo << (8 - remainbits) | x);
+				icluster = icluster % 4;
+				writenbytes(oss[layer + 1], 7 - icluster * 14 / 8);
+				writenbytes(oss[layer + 1], 1);
+				writenbxs(oss[layer + 1], pads[i].bx - 1 - lastbx);
+			}
+
+			// Complete the Files
+			writenbxs(oss[layer], RAMPAGE_SIZE / 8 - 1 - lastbx);
+			(*(oss[layer])) << std::flush;
+			writenbxs(oss[layer + 1], RAMPAGE_SIZE / 8 - 1 - lastbx);
+			(*(oss[layer + 1])) << std::flush;
+
+		} // End layer for loop
+
+
 		
 		return true;
 	}
