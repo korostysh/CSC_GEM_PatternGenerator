@@ -585,6 +585,22 @@ bool WritePat(std::string & prefix, std::vector<CLCT>& clcts)
 		}
 		return true;
 	}
+
+void pushInfo(std::fstream* oss, unsigned int info, unsigned int& reminfo, unsigned int& rembits, unsigned int iclust)
+	{
+	
+	}
+
+void closebx(std::fstream* oss, unsigned int& reminfo, unsigned int& rembits, unsigned int icluster)
+	{
+		unsigned int x = std::pow(2, 8-rembits) - 1;
+		(*oss) << char((reminfo << (8 - rembits)) | x);
+		writenbytes(oss, (8 - ((icluster*14)/8)));
+		
+		reminfo = 0;
+		rembits = 0;
+		return;
+	}
 // GEM
 bool WritePat(std::string& prefix, std::vector<Cluster>& in_pads)
 	{
@@ -599,9 +615,10 @@ bool WritePat(std::string& prefix, std::vector<Cluster>& in_pads)
 		
 		// Write GEMpads
 		for (int layer = 0; layer <= 2; layer += 2) {
+			std::cout << "Current Layer " << layer << std::endl;
 			std::vector<Cluster> pads;
 			if (layer == 0) CollectClusters(pads, in_pads, (1));
-			else CollectClusters(pads, in_pads, (layer));
+			else CollectClusters(pads, in_pads, 2);
 
 			int totbytes;
 			unsigned int remainbits = 0;
@@ -609,34 +626,33 @@ bool WritePat(std::string& prefix, std::vector<Cluster>& in_pads)
 			unsigned int icluster = 0;
 			unsigned int x;
 
-			unsigned int lastbx;
+			unsigned int lastbx = 0;
 
 			for (unsigned int i = 0; i < pads.size(); i++) {
 				std::cout << "i " << i << " bx " << pads[i].bx << " cluster bits: " << (std::bitset<14>)pads[i].info() << std::endl;
 
 				if (lastbx < pads[i].bx) {
-					if ((icluster >= 0) && (icluster < 4)) {
+					if ((icluster >= 0) && (icluster <= 4)) {
 						// Finish writing to File 1
-						x = std::pow(2, 8 - remainbits) - 1;
-						(*(oss[layer])) << (remaininfo << (8 - remainbits) | x);
-						writenbytes(oss[layer], 7 - icluster * 14 / 8);
-						writenbytes(oss[layer], 1);
+						closebx(oss[layer], remaininfo, remainbits, icluster);
+						// Fill File 1
 						writenbxs(oss[layer], pads[i].bx - 1 - lastbx);
 						// Fill File 2
-						writenbxs(oss[layer + 1], pads[i].bx - lastbx);	// one more byte since nothing was written for last bx
+						writenbxs(oss[layer + 1], pads[i].bx - lastbx);	// one more bx since nothing was written for last bx
 
 					}
-					else if (icluster >= 4 && icluster < 8) {
-						// Finish writing to File 2
-						x = std::pow(2, 8 - remainbits) - 1;
-						(*(oss[layer + 1])) << (remaininfo << (8 - remainbits) | x);
-						icluster = icluster % 4;
-						writenbytes(oss[layer + 1], 7 - icluster * 14 / 8);
-						writenbytes(oss[layer + 1], 1);
+					else if (icluster > 4 && icluster <= 8) {
+						// Finish File 1
+						closebx(oss[layer], remaininfo, remainbits, 4);
+						// Finish File 2
+						closebx(oss[layer + 1], remaininfo, remainbits, (icluster%4));
+						// Fill File 1
+						writenbxs(oss[layer], pads[i].bx - 1 - lastbx);
+						// Fill File 2
 						writenbxs(oss[layer + 1], pads[i].bx - 1 - lastbx);
-
 					}
-
+					std::cout <<" lastbx " << lastbx <<" input_pads bx " << pads[i].bx <<" remain n  "<< remainbits << " bits " << (std::bitset<8>)(remaininfo << (8-remainbits)) << std::endl;
+					lastbx = pads[i].bx;
 					icluster = 0;
 					remainbits = 0;
 					remaininfo = 0;
@@ -668,11 +684,10 @@ bool WritePat(std::string& prefix, std::vector<Cluster>& in_pads)
 						(*(oss[layer])) << char((remaininfo << 6) | (pads[i].info() >> 8));
 						(*(oss[layer])) << char(pads[i].info());
 						remaininfo = 0;
+						//closebx(oss[layer], remaininfo, remainbits, 4);
 						break;
 						// FILE 2
 					case 4: remainbits = 6;
-						// Finish File 1
-						writenbytes((oss[layer]), 1);
 						x = std::pow(2, remainbits) - 1;
 						remaininfo = (pads[i].info() & x);
 						(*(oss[layer + 1])) << char(pads[i].info() >> 6);
@@ -693,6 +708,7 @@ bool WritePat(std::string& prefix, std::vector<Cluster>& in_pads)
 						(*(oss[layer + 1])) << char((remaininfo << 6) | (pads[i].info() >> 8));
 						(*(oss[layer + 1])) << char(pads[i].info());
 						remaininfo = 0;
+						//closebx(oss[layer + 1], remaininfo, remainbits, 4);
 						break;
 					defalut:
 						std::cout << " error icluster: " << icluster << std::endl;
@@ -702,24 +718,14 @@ bool WritePat(std::string& prefix, std::vector<Cluster>& in_pads)
 				icluster++;
 			}// End pads vector loop
 
-			if ((icluster >= 0) && (icluster < 4)) {
+			if ((icluster > 0) && (icluster <= 4)) {
 				// Finish writing to File 1
-				x = std::pow(2, 8 - remainbits) - 1;
-				(*(oss[layer])) << (remaininfo << (8 - remainbits) | x);
-				writenbytes(oss[layer], 7 - icluster * 14 / 8);
-				writenbytes(oss[layer], 1);
-				writenbxs(oss[layer], pads[i].bx - 1 - lastbx);
-				// Fill File 2
-				writenbxs(oss[layer + 1], pads[i].bx - lastbx);	// one more byte since nothing was written for last bx
+				closebx(oss[layer], remaininfo, remainbits, icluster);
+				writenbxs(oss[layer + 1], 1);
 			}
-			else if (icluster >= 4 && icluster < 8) {
+			else if (icluster > 4 && icluster <= 8) {
 				// Finish writing to File 2
-				x = std::pow(2, 8 - remainbits) - 1;
-				(*(oss[layer + 1])) << (remaininfo << (8 - remainbits) | x);
-				icluster = icluster % 4;
-				writenbytes(oss[layer + 1], 7 - icluster * 14 / 8);
-				writenbytes(oss[layer + 1], 1);
-				writenbxs(oss[layer + 1], pads[i].bx - 1 - lastbx);
+				closebx(oss[layer + 1], remaininfo, remainbits, icluster%4);
 			}
 
 			// Complete the Files

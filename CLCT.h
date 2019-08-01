@@ -77,13 +77,6 @@ namespace cw {
 		friend std::ostream& operator << (std::ostream&, const Group&);
 	};
 
-	struct Cluster_bin	// 14-bit object
-	{
-		unsigned roll : 3;
-		unsigned pad  : 8;
-		unsigned size : 3;
-	};
-
 	class Cluster
 	{
 	public:
@@ -101,7 +94,6 @@ namespace cw {
 		friend std::ostream& operator<<(std::ostream&, const Cluster&);
 		friend std::istream& operator>>(std::istream&, Cluster&);
 
-		Cluster_bin bin(void);		// remove me
 		unsigned int info(void);
 	};
 	 
