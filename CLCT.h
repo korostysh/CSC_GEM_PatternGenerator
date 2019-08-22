@@ -96,7 +96,16 @@ namespace cw {
 
 		unsigned int info(void);
 	};
-	 
+
+	struct gemPacket {
+		int				num_clusters;
+		std::vector<unsigned char>	raw_info;
+
+		gemPacket(void);
+		gemPacket(std::vector<Cluster>& iClu,	unsigned int sInd = 0);
+
+		friend std::ostream& operator<<(std::ostream&, const gemPacket);	// writes 8 bytes (i.e. 1 bx of gem data for a single channel)
+	};	
 	
 	// Positioning Functions
 	int GetCFEB(int hs);		//	Out:	Cfeb given half strip

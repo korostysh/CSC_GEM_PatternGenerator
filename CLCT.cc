@@ -148,7 +148,7 @@ std::istream& operator>>(std::istream& is, CLCT& cl)
 		return is;
 	}
 
-
+///~~~~~~~~~~~~GEM~~~~~~~~~~~~~~~~~~~~~~~~
 Cluster::Cluster(void) :
 	bx(0), roll(0), pad(0), size(0), layer(0)
 	{}
@@ -193,6 +193,23 @@ unsigned int Cluster::info(void)
 		info = ((size << 11) | (roll << 8) | (pad));	// Do range check before calling!
 		return info;
 	}
+
+gemPacket::gemPacket(void) : num_clusters(0) {}
+
+gemPacket::gemPacket(std::vector<Cluster>& iClu, unsigned int sInd) {
+	int Niter = ((iClu.size() - sInd) > 4) ? 4 : (iClu.size() - sInd);
+	if(Niter <= 0)	
+		throw "Something went wrong in gemPack creation!";
+       	
+	for(int i = 0; i < Niter; i++) {
+		this->raw_info.push_back( iClu[sInd + i].info() );
+	}
+
+	this->num_clusters = raw_info.size();
+	return;
+}
+
+
 
 
 Group::Group(void)// : 
