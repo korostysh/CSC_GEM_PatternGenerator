@@ -15,6 +15,23 @@ using namespace cw;
 
 int main(int argc, char * argv[]) {
 
+	//unsigned int uint = 120;
+	//unsigned char a , b = 255;
+
+	gemPacket pack;
+
+	//std::cout << std::hex << uint << std::endl;
+	std::cout << std::hex << pack << std::endl;
+
+	std::fstream ofs("test_file.pat", std::ios_base::out);
+	for (int i = 0; i < 512; i++) {
+		ofs << pack;
+	}
+	ofs.close();
+
+	return 0;
+
+/* UNCOMMENT TO TEST PATTERN GEN
 	if(argc <= 1) {
         	std::cout << "Error! No filename specified!" << std::endl;
         	return -1;
@@ -22,10 +39,12 @@ int main(int argc, char * argv[]) {
 
 	std::string file_name(argv[1]);
 	std::vector<CLCT> clcts;
+	std::vector<Cluster> gem;
 
-	std::cout << "Reading from File prefix:  " << file_name << std::endl;
-	ReadTxt(file_name, clcts);
+	std::cout << "Reading from File:  " << file_name << std::endl;
+	ReadTxt(file_name, clcts, gem);
 	std::cout << "Successfully read " << clcts.size() << " Muons" << std::endl;
+	std::cout << "Successfully read " << gem.size()   << " GEM clusters" << std::endl;
 
 	for(int i=0;i<clcts.size();i++){
 		PrintCLCT(clcts.at(i));
@@ -41,6 +60,7 @@ int main(int argc, char * argv[]) {
 	else{
 		return -1;
 	}
+*/
 /*
 
 	std::string pref = "SamplePattern";
@@ -76,3 +96,4 @@ int main(int argc, char * argv[]) {
 
 	return 0;
 }
+

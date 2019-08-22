@@ -148,7 +148,8 @@ std::istream& operator>>(std::istream& is, CLCT& cl)
 		return is;
 	}
 
-///~~~~~~~~~~~~GEM~~~~~~~~~~~~~~~~~~~~~~~~
+///~~~~~~~~~~~~ GEM Clusters ~~~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Cluster::Cluster(void) :
 	bx(0), roll(0), pad(0), size(0), layer(0)
 	{}
@@ -194,6 +195,9 @@ unsigned int Cluster::info(void)
 		return info;
 	}
 
+
+//~~~~~~ GEM Packets ~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 gemPacket::gemPacket(void) : num_clusters(0) {}
 
 gemPacket::gemPacket(std::vector<Cluster>& iClu, unsigned int sInd) {
@@ -209,9 +213,60 @@ gemPacket::gemPacket(std::vector<Cluster>& iClu, unsigned int sInd) {
 	return;
 }
 
+std::ostream& operator<<(std::ostream& os, const gemPacket& pack)
+	{
+		std::vector<unsigned int> pad = pack.raw_info;
+	
+		unsigned int empty_pad =  std::pow(2, 14) - 1 ;
+			
+		//std::cout << pack.raw_info.size() << std::endl;
+		//std::cout << pad.size() << std::endl;
 
+		for (int i = 0; i < (4 - pack.raw_info.size()); i++) {
+			pad.push_back( empty_pad );	// i.e. 14 1's or a blank cluster
+			
+			//std::cout << pad.size() << std::endl; 
+		}
+		
+		if (pad.size() != 4) return os;
 
+		for (int byte = 0; byte < 8; byte++) {
+			switch (byte) {
+				case 0:
+					os << char( pad[0] >> 6 );
+					break;
+				case 1:
+					os << char( (pad[0] << 2) | (pad[1] >> 12) );
+					break;
+				case 2:
+					os << char( pad[1] >> 4 );
+					break;
+				case 3:
+					os << char( (pad[1] << 4) | (pad[2] >> 10) );
+					break;
+				case 4:
+					os << char( pad[2] >> 2 );
+					break;
+				case 5:
+					os << char( (pad[2] << 6) | (pad[3] >> 8) );
+					break;
+				case 6:
+					os << char( pad[3] );
+					break;
+				case 7:
+					os << char( empty_pad );
+					break;
+				default:
+					break;
+			}
+			//std::cout << byte << std::endl;
+		}
+		
+		return os;
+	}
 
+//~~~~~~~~~ CLCT Groups ~~~~~~~~~~~~~~~~
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Group::Group(void)// : 
 	//hexdata( std::vector<unsigned char>(CSCConstants::NUM_LAYERS, unsigned char(0)) )
 	{

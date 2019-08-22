@@ -99,12 +99,12 @@ namespace cw {
 
 	struct gemPacket {
 		int				num_clusters;
-		std::vector<unsigned char>	raw_info;
+		std::vector<unsigned int>	raw_info;
 
 		gemPacket(void);
 		gemPacket(std::vector<Cluster>& iClu,	unsigned int sInd = 0);
 
-		friend std::ostream& operator<<(std::ostream&, const gemPacket);	// writes 8 bytes (i.e. 1 bx of gem data for a single channel)
+		friend std::ostream& operator<<(std::ostream&, const gemPacket&);	// writes 8 bytes (i.e. 1 bx of gem data for a single channel)
 	};	
 	
 	// Positioning Functions
